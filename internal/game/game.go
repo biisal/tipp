@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -28,11 +29,11 @@ type TippModel struct {
 	EndTime    time.Time
 }
 
-func InitTippModel() *TippModel {
+func InitTippModel(wordsLen int) *TippModel {
 	input := textinput.New()
 	textView := viewport.New(20, 10)
 	input.Focus()
-	words, err := utils.GetWordFromFile(10)
+	words, err := utils.GetWordFromFile(wordsLen)
 	if err != nil {
 		log.Fatal("could not get words", err)
 	}
@@ -54,8 +55,9 @@ func (t TippModel) Init() tea.Cmd {
 
 func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-
-	t.Input, cmd = t.Input.Update(msg)
+	if !t.ShowResult {
+		t.Input, cmd = t.Input.Update(msg)
+	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -73,6 +75,10 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				t.TypedText += t.Input.Value()
 				t.Input.Reset()
 			}
+		case "q":
+			if t.ShowResult {
+				return t, tea.Quit
+			}
 		}
 	case tea.WindowSizeMsg:
 		t.Width = msg.Width
@@ -89,7 +95,7 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (t TippModel) View() string {
-	words, totalCount, correctCount := utils.TextViewWithStats(t.FullText, t.Content)
+	words, _, correctCount := utils.TextViewWithStats(t.FullText, t.Content)
 	var s string
 	if !t.ShowResult {
 		wordsView := utils.TextViewStyle.Width(t.Width - 5).Render(words)
@@ -115,18 +121,27 @@ func (t TippModel) View() string {
 		s = lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
 	} else {
 		timeTaken := t.EndTime.Sub(t.StartTime)
-		wpm := float64(len(strings.Split(t.FullText, " "))) / timeTaken.Minutes()
-		accuracy := float64(correctCount) * 100 / float64(totalCount)
+		fullTextLen := len(t.FullText)
+		wpm := 0
+		if t.FullText != "" {
+			wpm = int(float64(len(strings.Split(t.FullText, " "))) / timeTaken.Minutes())
+		}
+
+		accuracy := 0.0
+		if fullTextLen > 0 {
+			accuracy = float64(correctCount) / float64(fullTextLen) * 100
+		}
 		columns := []table.Column{
 			{Title: "Result", Width: 20},
 			{Title: "", Width: 10},
 		}
 		rows := []table.Row{
 			{"Accuracy", strconv.FormatFloat(accuracy, 'f', 2, 64) + "%"},
-			{"WPM", strconv.Itoa(int(wpm))},
+			{"WPM", strconv.Itoa(wpm)},
+			{"Correct KeyPresses", fmt.Sprintf("%d / %d", correctCount, fullTextLen)},
 		}
 		result := table.New(table.WithColumns(columns), table.WithRows(rows))
-		result.SetHeight(3)
+		result.SetHeight(1 + len(rows))
 		resultVivew := lipgloss.NewStyle().BorderForeground(lipgloss.Color("#ffffff")).BorderStyle(lipgloss.RoundedBorder())
 		s = lipgloss.Place(
 			t.Width,

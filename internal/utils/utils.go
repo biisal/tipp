@@ -12,7 +12,7 @@ import (
 
 var (
 	InputStyle = lipgloss.NewStyle().
-			Background(lipgloss.Color("#555555")). // Gray background
+			Background(lipgloss.Color("#130F1A")). // Gray background
 			Foreground(lipgloss.Color("#ffffff")). // White text
 			Padding(1, 1).Margin(2, 0)
 	TextViewStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).AlignHorizontal(lipgloss.Center)
@@ -87,7 +87,7 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 				mistakCount++
 			}
 		} else if i == typedTextLen {
-			s += RemainingStyle.Background(lipgloss.Color("#ffffff")).Render(string(w))
+			s += RemainingStyle.Background(lipgloss.Color("#CB97FF")).Foreground(lipgloss.Color("#000000")).Render(string(w))
 		} else {
 			s += RemainingStyle.Render(string(w))
 		}
