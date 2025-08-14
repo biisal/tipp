@@ -17,12 +17,13 @@ var (
 			Padding(1, 1).Margin(2, 0)
 	TextViewStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).AlignHorizontal(lipgloss.Center)
 	TypedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#0FF563"))
+	MistakeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
 	RemainingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#D10FF5"))
 )
 
 const (
 	wordsFiledir = "./words.txt"
-	defaltWords  = "the quick brown fox jumps over the lazy dog"
+	defaltWords  = "let the const be var"
 )
 
 func GetWordFromFile(n int) (string, error) {
@@ -66,4 +67,28 @@ func GetWordFromFile(n int) (string, error) {
 		randomWords += words[rand.Intn(wordsLen)] + " "
 	}
 	return strings.TrimSpace(randomWords), nil
+}
+
+func TextViewWithStats(typedText, words string) string {
+	typedTextLen, wordsLen := len(typedText), len(words)
+
+	if typedTextLen > wordsLen {
+		typedText = typedText[:len(words)]
+	}
+	s := ""
+
+	for i, w := range words {
+		if i < typedTextLen {
+			if byte(w) == typedText[i] {
+				s += TypedStyle.Render(string(w))
+			} else {
+				s += MistakeStyle.Render(string(w))
+			}
+		} else if i == typedTextLen {
+			s += RemainingStyle.Background(lipgloss.Color("#ffffff")).Render(string(w))
+		} else {
+			s += RemainingStyle.Render(string(w))
+		}
+	}
+	return s
 }

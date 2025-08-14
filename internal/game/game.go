@@ -13,6 +13,8 @@ import (
 type TippModel struct {
 	Input          textinput.Model
 	TextView       viewport.Model
+	TypedText      string
+	FullText       string
 	InputCharCount int
 	Content        string
 	Width          int
@@ -24,7 +26,7 @@ func InitTippModel() TippModel {
 	input := textinput.New()
 	textView := viewport.New(20, 10)
 	input.Focus()
-	words, err := utils.GetWordFromFile(90)
+	words, err := utils.GetWordFromFile(10)
 	if err != nil {
 		log.Fatal("could not get words", err)
 	}
@@ -42,33 +44,33 @@ func (t TippModel) Init() tea.Cmd {
 
 func (t TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	// Update the input first (handles backspace, ctrl+w, etc.)
+	t.Input, cmd = t.Input.Update(msg)
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return t, tea.Quit
-		case "enter":
-			tea.ClearScreen()
 		case " ":
-			t.Input.Reset()
-		case "backspace":
-			if t.InputCharCount > 0 {
-				t.InputCharCount--
+			if t.Input.Value() != "" {
+				t.TypedText += t.Input.Value()
+				t.Input.Reset()
 			}
-		default:
-			t.InputCharCount++
-
 		}
 	case tea.WindowSizeMsg:
 		t.Width = msg.Width
 		t.Height = msg.Height
 	}
-	t.Input, cmd = t.Input.Update(msg)
+
+	t.FullText = t.TypedText + t.Input.Value()
+
 	return t, cmd
 }
 
 func (t TippModel) View() string {
-	words := utils.TextViewStyle.Width(t.Width - 5).Render(t.Content)
+	words := utils.TextViewStyle.Width(t.Width - 5).Render(utils.TextViewWithStats(t.FullText, t.Content))
 
 	input := utils.InputStyle.
 		Width(int(float32(t.Width) * 0.5)).
