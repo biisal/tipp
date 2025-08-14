@@ -2,8 +2,12 @@ package game
 
 import (
 	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/biisal/tipp/internal/utils"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,18 +15,20 @@ import (
 )
 
 type TippModel struct {
-	Input          textinput.Model
-	TextView       viewport.Model
-	TypedText      string
-	FullText       string
-	InputCharCount int
-	Content        string
-	Width          int
-	Height         int
-	Words          int
+	Input      textinput.Model
+	TextView   viewport.Model
+	TypedText  string
+	FullText   string
+	Content    string
+	Width      int
+	Height     int
+	Words      int
+	ShowResult bool
+	StartTime  time.Time
+	EndTime    time.Time
 }
 
-func InitTippModel() TippModel {
+func InitTippModel() *TippModel {
 	input := textinput.New()
 	textView := viewport.New(20, 10)
 	input.Focus()
@@ -30,11 +36,12 @@ func InitTippModel() TippModel {
 	if err != nil {
 		log.Fatal("could not get words", err)
 	}
-	return TippModel{
-		Content:  words,
-		Input:    input,
-		TextView: textView,
-		Words:    1,
+	return &TippModel{
+		Content:   words,
+		Input:     input,
+		TextView:  textView,
+		Words:     1,
+		StartTime: time.Now(),
 	}
 }
 
@@ -42,17 +49,22 @@ func (t TippModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (t TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// Update the input first (handles backspace, ctrl+w, etc.)
 	t.Input, cmd = t.Input.Update(msg)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
 			return t, tea.Quit
+		case "esc":
+			if t.ShowResult {
+				return t, tea.Quit
+			}
+			t.EndTime = time.Now()
+			t.ShowResult = true
 		case " ":
 			if t.Input.Value() != "" {
 				t.TypedText += t.Input.Value()
@@ -66,31 +78,59 @@ func (t TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	t.FullText = t.TypedText + t.Input.Value()
 
+	if len(t.FullText) >= len(t.Content) && !t.ShowResult {
+		t.EndTime = time.Now()
+		t.ShowResult = true
+	}
 	return t, cmd
 }
 
 func (t TippModel) View() string {
-	words := utils.TextViewStyle.Width(t.Width - 5).Render(utils.TextViewWithStats(t.FullText, t.Content))
+	words, totalCount, correctCount := utils.TextViewWithStats(t.FullText, t.Content)
+	var s string
+	if !t.ShowResult {
+		wordsView := utils.TextViewStyle.Width(t.Width - 5).Render(words)
+		input := utils.InputStyle.
+			Width(int(float32(t.Width) * 0.5)).
+			Render(t.Input.View())
 
-	input := utils.InputStyle.
-		Width(int(float32(t.Width) * 0.5)).
-		Render(t.Input.View())
+		topPart := lipgloss.Place(
+			t.Width,
+			t.Height-5,
+			lipgloss.Center,
+			lipgloss.Center,
+			wordsView,
+		)
 
-	topPart := lipgloss.Place(
-		t.Width,
-		t.Height-5,
-		lipgloss.Center,
-		lipgloss.Center,
-		words,
-	)
+		bottomPart := lipgloss.Place(
+			t.Width,
+			5,
+			lipgloss.Center,
+			lipgloss.Bottom,
+			input,
+		)
+		s = lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
+	} else {
+		timeTaken := t.EndTime.Sub(t.StartTime)
+		wpm := float64(len(strings.Split(t.FullText, " "))) / timeTaken.Minutes()
+		accuracy := float64(correctCount) * 100 / float64(totalCount)
+		columns := []table.Column{
+			{Title: "Result", Width: 20},
+			{Title: "", Width: 20},
+		}
+		rows := []table.Row{
+			{"Accuracy", strconv.FormatFloat(accuracy, 'f', 2, 64) + "%"},
+			{"WPM", strconv.FormatFloat(wpm, 'f', 2, 64)},
+		}
+		result := table.New(table.WithColumns(columns), table.WithRows(rows))
 
-	bottomPart := lipgloss.Place(
-		t.Width,
-		5,
-		lipgloss.Center,
-		lipgloss.Bottom,
-		input,
-	)
-
-	return lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
+		s = lipgloss.Place(
+			t.Width,
+			t.Height-5,
+			lipgloss.Center,
+			lipgloss.Center,
+			result.View(),
+		)
+	}
+	return s
 }
