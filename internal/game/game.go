@@ -37,11 +37,14 @@ func InitTippModel() *TippModel {
 		log.Fatal("could not get words", err)
 	}
 	return &TippModel{
-		Content:   words,
-		Input:     input,
-		TextView:  textView,
-		Words:     1,
-		StartTime: time.Now(),
+		Content:    words,
+		Input:      input,
+		TextView:   textView,
+		ShowResult: false,
+		TypedText:  "",
+		FullText:   "",
+		Words:      1,
+		StartTime:  time.Now(),
 	}
 }
 
@@ -116,20 +119,21 @@ func (t TippModel) View() string {
 		accuracy := float64(correctCount) * 100 / float64(totalCount)
 		columns := []table.Column{
 			{Title: "Result", Width: 20},
-			{Title: "", Width: 20},
+			{Title: "", Width: 10},
 		}
 		rows := []table.Row{
 			{"Accuracy", strconv.FormatFloat(accuracy, 'f', 2, 64) + "%"},
-			{"WPM", strconv.FormatFloat(wpm, 'f', 2, 64)},
+			{"WPM", strconv.Itoa(int(wpm))},
 		}
 		result := table.New(table.WithColumns(columns), table.WithRows(rows))
-
+		result.SetHeight(3)
+		resultVivew := lipgloss.NewStyle().BorderForeground(lipgloss.Color("#ffffff")).BorderStyle(lipgloss.RoundedBorder())
 		s = lipgloss.Place(
 			t.Width,
-			t.Height-5,
+			t.Height,
 			lipgloss.Center,
 			lipgloss.Center,
-			result.View(),
+			resultVivew.Render(result.View()),
 		)
 	}
 	return s

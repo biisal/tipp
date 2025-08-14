@@ -92,5 +92,5 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 			s += RemainingStyle.Render(string(w))
 		}
 	}
-	return s, wordsLen, wordsLen - mistakCount
+	return s, wordsLen, typedTextLen - mistakCount
 }
