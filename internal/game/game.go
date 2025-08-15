@@ -34,7 +34,7 @@ func InitTippModel(wordsLen int) *TippModel {
 	input.Focus()
 	words, err := utils.GetWordFromFile(wordsLen)
 	if err != nil {
-		log.Fatal("could not get words", err)
+		log.Fatal(err)
 	}
 	return &TippModel{
 		Content:    words,
@@ -100,7 +100,7 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (t TippModel) View() string {
 	words, _, correctCount := utils.TextViewWithStats(t.FullText, t.Content)
 	var s string
-	logo := lipgloss.NewStyle().Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#75FFCF")).Margin(1, 2).Padding(0, 1).Bold(true).Render("TIPP")
+	logo := lipgloss.NewStyle().Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#75FFCF")).Margin(1, 2).Padding(0, 1).Bold(true).Render(`𝗧𝗜𝗣𝗣`)
 	topPart := lipgloss.Place(
 		t.Width,
 		t.Height*20/100,
@@ -108,6 +108,7 @@ func (t TippModel) View() string {
 		lipgloss.Top,
 		logo,
 	)
+	quteInstractioons := lipgloss.NewStyle().Foreground(lipgloss.Color("#8AA0AC")).Background(lipgloss.Color("#393939")).Margin(1, 2).Padding(0, 1)
 	if !t.ShowResult {
 		wordsView := utils.TextViewStyle.Width(t.Width - 5).Render(words)
 		input := utils.InputStyle.
@@ -130,7 +131,7 @@ func (t TippModel) View() string {
 			input,
 		)
 		// bottomPart = lipgloss.JoinVertical(lipgloss.Center, middlePart, bottomPart)
-		s += lipgloss.JoinVertical(lipgloss.Top, topPart, middlePart, bottomPart)
+		s += lipgloss.JoinVertical(lipgloss.Top, topPart, middlePart, bottomPart, quteInstractioons.Render("press esc to show result"))
 		// s += logo + "\n" + middlePart + "\n" + bottomPart
 	} else {
 		timeTaken := t.EndTime.Sub(t.StartTime)
@@ -161,12 +162,12 @@ func (t TippModel) View() string {
 		resultVivew := lipgloss.NewStyle().BorderForeground(lipgloss.Color("#ffffff")).BorderStyle(lipgloss.RoundedBorder())
 		bottomPart := lipgloss.Place(
 			t.Width,
-			t.Height*70/100,
+			t.Height*65/100,
 			lipgloss.Center,
 			lipgloss.Center,
 			resultVivew.Render(result.View()),
 		)
-		s += lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
+		s += lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart, quteInstractioons.Render("press (q/esc/ctrl+c) to exit"))
 	}
 	return s
 }

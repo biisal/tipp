@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	words := flag.Int("words", 30, "Number of words to type. Max is 600")
+	words := flag.Int("w", 30, "Number of words to type. Max is 600")
 	flag.Parse()
 	if *words <= 0 || *words > 600 {
 		fmt.Println("Number of words must be between 1 and 600")

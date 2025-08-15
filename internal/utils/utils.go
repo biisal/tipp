@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/biisal/tipp/resouces"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -19,34 +20,48 @@ var (
 	TypedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#0FF563"))
 	MistakeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
 	RemainingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#A8A8A8"))
+
+	wordsFiledir = "/.config/tipp/"
 )
 
 const (
-	wordsFiledir = "./words.txt"
-	defaltWords  = "let the const be var"
+	wordsFileName = "words.txt"
 )
 
+func init() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	wordsFiledir = home + wordsFiledir
+}
+
 func GetWordFromFile(n int) (string, error) {
-	file, err := os.Open(wordsFiledir)
+	permission := 0644
+	fullFilePath := wordsFiledir + wordsFileName
+	if err := os.MkdirAll(wordsFiledir, os.ModePerm); err != nil {
+		return "", err
+	}
+	file, err := os.OpenFile(fullFilePath, os.O_RDONLY, os.FileMode(permission))
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("The words.txt file does not exits in the current directory.\nDo you want to create it? (y/n)")
 			var input string
 			fmt.Scanln(&input)
 			if input == "y" || input == "Y" {
-				file, err = os.Create(wordsFiledir)
+				file, err = os.Create(fullFilePath)
 				if err != nil {
 					return "", err
 				}
-				file.WriteString(defaltWords)
+				file.WriteString(resouces.DEFAULT_WORDS)
 				file.Close()
 				return GetWordFromFile(n)
 			} else {
 				return "", err
 			}
 		}
-		return "", err
 	}
+	defer file.Close()
 	var words []string
 	var randomWords string
 	scanner := bufio.NewScanner(file)
