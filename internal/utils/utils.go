@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/biisal/tipp/resouces"
+	"github.com/biisal/tipp/words"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -53,7 +53,7 @@ func GetWordFromFile(n int) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				file.WriteString(resouces.DEFAULT_WORDS)
+				file.WriteString(words.DEFAULT_WORDS)
 				file.Close()
 				return GetWordFromFile(n)
 			} else {
