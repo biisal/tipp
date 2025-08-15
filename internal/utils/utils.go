@@ -18,7 +18,7 @@ var (
 	TextViewStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff")).AlignHorizontal(lipgloss.Center)
 	TypedStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#0FF563"))
 	MistakeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
-	RemainingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#444"))
+	RemainingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#A8A8A8"))
 )
 
 const (
@@ -76,7 +76,7 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 	if typedTextLen > wordsLen {
 		typedText = typedText[:len(words)]
 	}
-	s, mistakCount := "", 0
+	s, mistakeCount := "", 0
 
 	for i, w := range words {
 		if i < typedTextLen {
@@ -84,7 +84,7 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 				s += TypedStyle.Render(string(w))
 			} else {
 				s += MistakeStyle.Render(string(w))
-				mistakCount++
+				mistakeCount++
 			}
 		} else if i == typedTextLen {
 			s += RemainingStyle.Background(lipgloss.Color("#CB97FF")).Foreground(lipgloss.Color("#000000")).Render(string(w))
@@ -92,5 +92,5 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 			s += RemainingStyle.Render(string(w))
 		}
 	}
-	return s, wordsLen, typedTextLen - mistakCount
+	return s, wordsLen, typedTextLen - mistakeCount
 }

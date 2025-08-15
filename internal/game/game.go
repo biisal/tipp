@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/biisal/tipp/internal/utils"
@@ -58,7 +57,7 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !t.ShowResult {
 		t.Input, cmd = t.Input.Update(msg)
 	}
-
+	prevText := t.FullText
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -71,7 +70,8 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			t.EndTime = time.Now()
 			t.ShowResult = true
 		case " ":
-			if t.Input.Value() != "" {
+			lastIdx := len(t.FullText) - 1
+			if t.Input.Value() != "" && lastIdx > 0 && len(t.Content) > lastIdx+1 && string(t.Content[lastIdx+1]) == " " {
 				t.TypedText += t.Input.Value()
 				t.Input.Reset()
 			}
@@ -84,28 +84,39 @@ func (t *TippModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		t.Width = msg.Width
 		t.Height = msg.Height
 	}
-
 	t.FullText = t.TypedText + t.Input.Value()
 
+	if prevText == "" && !t.ShowResult && t.FullText != "" {
+		t.StartTime = time.Now()
+	}
 	if len(t.FullText) >= len(t.Content) && !t.ShowResult {
 		t.EndTime = time.Now()
 		t.ShowResult = true
 	}
+
 	return t, cmd
 }
 
 func (t TippModel) View() string {
 	words, _, correctCount := utils.TextViewWithStats(t.FullText, t.Content)
 	var s string
+	logo := lipgloss.NewStyle().Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#75FFCF")).Margin(1, 2).Padding(0, 1).Bold(true).Render("TIPP")
+	topPart := lipgloss.Place(
+		t.Width,
+		t.Height*20/100,
+		lipgloss.Left,
+		lipgloss.Top,
+		logo,
+	)
 	if !t.ShowResult {
 		wordsView := utils.TextViewStyle.Width(t.Width - 5).Render(words)
 		input := utils.InputStyle.
 			Width(int(float32(t.Width) * 0.5)).
 			Render(t.Input.View())
 
-		topPart := lipgloss.Place(
+		middlePart := lipgloss.Place(
 			t.Width,
-			t.Height-5,
+			t.Height*50/100,
 			lipgloss.Center,
 			lipgloss.Center,
 			wordsView,
@@ -118,13 +129,18 @@ func (t TippModel) View() string {
 			lipgloss.Bottom,
 			input,
 		)
-		s = lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
+		// bottomPart = lipgloss.JoinVertical(lipgloss.Center, middlePart, bottomPart)
+		s += lipgloss.JoinVertical(lipgloss.Top, topPart, middlePart, bottomPart)
+		// s += logo + "\n" + middlePart + "\n" + bottomPart
 	} else {
 		timeTaken := t.EndTime.Sub(t.StartTime)
 		fullTextLen := len(t.FullText)
 		wpm := 0
 		if t.FullText != "" {
-			wpm = int(float64(len(strings.Split(t.FullText, " "))) / timeTaken.Minutes())
+			minutes := timeTaken.Minutes()
+			if minutes > 0 {
+				wpm = int(float64(len(t.FullText)) / 5.0 / minutes)
+			}
 		}
 
 		accuracy := 0.0
@@ -138,18 +154,19 @@ func (t TippModel) View() string {
 		rows := []table.Row{
 			{"Accuracy", strconv.FormatFloat(accuracy, 'f', 2, 64) + "%"},
 			{"WPM", strconv.Itoa(wpm)},
-			{"Correct KeyPresses", fmt.Sprintf("%d / %d", correctCount, fullTextLen)},
+			{"Correct KeyPresses", fmt.Sprintf("%d/%d", correctCount, fullTextLen)},
 		}
 		result := table.New(table.WithColumns(columns), table.WithRows(rows))
 		result.SetHeight(1 + len(rows))
 		resultVivew := lipgloss.NewStyle().BorderForeground(lipgloss.Color("#ffffff")).BorderStyle(lipgloss.RoundedBorder())
-		s = lipgloss.Place(
+		bottomPart := lipgloss.Place(
 			t.Width,
-			t.Height,
+			t.Height*70/100,
 			lipgloss.Center,
 			lipgloss.Center,
 			resultVivew.Render(result.View()),
 		)
+		s += lipgloss.JoinVertical(lipgloss.Top, topPart, bottomPart)
 	}
 	return s
 }
