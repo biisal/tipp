@@ -5,6 +5,11 @@ tipp is a terminal typing test made with Golang and BubbleTea, inspired by ttype
 ![tipp-demo](./assets/tipp-demo.gif)
 
 ## Installation
+### Direct using curl 
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/biisal/tipp/refs/heads/main/install.sh | bash
+```
 
 ### Using go
 ```bash
