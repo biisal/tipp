@@ -71,7 +71,7 @@ New-Item -ItemType Directory -Force "$env:APPDATA\tipp"
 notepad "$env:APPDATA\tipp\words.txt"
 ```
 
-* Add your words, one per line.
+* Add your words 
 * Save the file, and your program will use them automatically.
 
 ---
