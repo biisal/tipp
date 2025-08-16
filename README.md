@@ -83,7 +83,17 @@ notepad "$env:APPDATA\tipp\words.txt"
 - For help run `tipp -h` : 
 ```bash
 Usage of tipp:
+  -c string
+    	Custom words file path
+  -m string
+    	Mode to use. Options are
+    		eng
+    		py
+    		go
+    		js
+    		c
+    		(default "eng")
   -w int
-        Number of words to type. Max is 600 (default 30)
+    	Number of words to type. Max is 300 (default 30)
 ```
 Thanks !

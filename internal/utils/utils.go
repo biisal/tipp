@@ -24,9 +24,18 @@ var (
 	wordsFiledir = "/.config/tipp/"
 )
 
-const (
-	wordsFileName = "words.txt"
-)
+type Word struct {
+	Default  string
+	FileName string
+}
+
+var WordsMap = map[string]Word{
+	"eng": {words.ENGLISH_WORDS, "eng_words.txt"},
+	"py":  {words.PYTHON_WORDS, "py_words.txt"},
+	"go":  {words.GO_WORDS, "go_words.txt"},
+	"js":  {words.JS_WORDS, "js_words.txt"},
+	"c":   {words.C_WORDS, "c_words.txt"},
+}
 
 func init() {
 	home, err := os.UserHomeDir()
@@ -36,28 +45,46 @@ func init() {
 	wordsFiledir = home + wordsFiledir
 }
 
-func GetWordFromFile(n int) (string, error) {
+func GetWordFromFile(n int, mode string, custom string) (string, error) {
 	permission := 0644
-	fullFilePath := wordsFiledir + wordsFileName
+	fullFilePath := custom
+	wordsFileName := Word{}
+	if custom == "" {
+		exits := false
+		wordsFileName, exits = WordsMap[mode]
+		if !exits {
+			availableModes := "\n\t"
+			for m := range WordsMap {
+				availableModes += m + "\n\t"
+			}
+			return "", fmt.Errorf("invalid mode: %s,\navailable modes: %v", mode, availableModes)
+		}
+		fullFilePath = wordsFiledir + wordsFileName.FileName
+		permission = 0666
+	}
 	if err := os.MkdirAll(wordsFiledir, os.ModePerm); err != nil {
 		return "", err
 	}
 	file, err := os.OpenFile(fullFilePath, os.O_RDONLY, os.FileMode(permission))
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("The words.txt file does not exits in the current directory.\nDo you want to create it? (y/n)")
-			var input string
-			fmt.Scanln(&input)
-			if input == "y" || input == "Y" {
-				file, err = os.Create(fullFilePath)
-				if err != nil {
-					return "", err
-				}
-				file.WriteString(words.DEFAULT_WORDS)
-				file.Close()
-				return GetWordFromFile(n)
+			if custom != "" {
+				return "", fmt.Errorf("your custom file %s does not exits", custom)
 			} else {
-				return "", err
+				fmt.Printf("The %s file does not exits in %s directory.\nDo you want to create it? (y/n)\n: ", wordsFileName.FileName, wordsFiledir)
+				var input string
+				fmt.Scanln(&input)
+				if input == "y" || input == "Y" {
+					file, err = os.Create(fullFilePath)
+					if err != nil {
+						return "", err
+					}
+					file.WriteString(wordsFileName.Default)
+					file.Close()
+					return GetWordFromFile(n, mode, custom)
+				} else {
+					return "", fmt.Errorf("Exiting program! Either create the file %s manually in %s directory or re run the command and press y", wordsFileName.FileName, wordsFiledir)
+				}
 			}
 		}
 	}
@@ -68,7 +95,10 @@ func GetWordFromFile(n int) (string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		for w := range strings.SplitSeq(line, " ") {
-			words = append(words, w)
+			if w == "" {
+				continue
+			}
+			words = append(words, strings.TrimSpace(w))
 		}
 	}
 	if err := scanner.Err(); err != nil {

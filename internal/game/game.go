@@ -2,7 +2,7 @@ package game
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -28,13 +28,15 @@ type TippModel struct {
 	EndTime    time.Time
 }
 
-func InitTippModel(wordsLen int) *TippModel {
+func InitTippModel(wordsLen int, mode string, custom string) *TippModel {
 	input := textinput.New()
 	textView := viewport.New(20, 10)
 	input.Focus()
-	words, err := utils.GetWordFromFile(wordsLen)
+	words, err := utils.GetWordFromFile(wordsLen, mode, custom)
 	if err != nil {
-		log.Fatal(err)
+		red := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
+		fmt.Println(red.Render(err.Error()))
+		os.Exit(1)
 	}
 	return &TippModel{
 		Content:    words,
