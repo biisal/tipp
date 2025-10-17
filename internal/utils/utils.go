@@ -114,6 +114,13 @@ func GetWordFromFile(n int, mode string, custom string) (string, error) {
 	return strings.TrimSpace(randomWords), nil
 }
 
+const (
+	RED    = "\033[0;31m"
+	GREEN  = "\033[0;32m"
+	PURPLE = "\033[0;35m"
+	RESET  = "\033[0m"
+)
+
 // returns viewString , totalCount , correctCount ,
 func TextViewWithStats(typedText, words string) (string, int, int) {
 	typedTextLen, wordsLen := len(typedText), len(words)
@@ -128,14 +135,28 @@ func TextViewWithStats(typedText, words string) (string, int, int) {
 			if byte(w) == typedText[i] {
 				s += TypedStyle.Render(string(w))
 			} else {
-				s += MistakeStyle.Render(string(w))
+				s += fmt.Sprintf("%s%c%s", PURPLE, w, RESET)
 				mistakeCount++
 			}
 		} else if i == typedTextLen {
 			s += RemainingStyle.Background(lipgloss.Color("#CB97FF")).Foreground(lipgloss.Color("#000000")).Render(string(w))
 		} else {
-			s += RemainingStyle.Render(string(w))
+			s += string(w)
 		}
 	}
 	return s, wordsLen, typedTextLen - mistakeCount
+}
+
+func GetInstructionsStyle() (string, int) {
+	quteInstractioons := lipgloss.NewStyle().Foreground(lipgloss.Color("#8AA0AC")).
+		Background(lipgloss.Color("#393939")).
+		Margin(1, 2).
+		Padding(0, 1).
+		Render("press esc to show result")
+	return quteInstractioons, lipgloss.Height(quteInstractioons)
+}
+
+func GetLogo() string {
+	logo := lipgloss.NewStyle().Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#75FFCF")).Margin(1, 2).Padding(0, 1).Bold(true).Render(`𝗧𝗜𝗣𝗣`)
+	return logo
 }

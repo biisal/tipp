@@ -105,7 +105,7 @@ func (t TippModel) View() string {
 	logo := lipgloss.NewStyle().Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#75FFCF")).Margin(1, 2).Padding(0, 1).Bold(true).Render(`𝗧𝗜𝗣𝗣`)
 	topPart := lipgloss.Place(
 		t.Width,
-		t.Height*20/100,
+		lipgloss.Height(logo),
 		lipgloss.Left,
 		lipgloss.Top,
 		logo,
@@ -132,9 +132,7 @@ func (t TippModel) View() string {
 			lipgloss.Bottom,
 			input,
 		)
-		// bottomPart = lipgloss.JoinVertical(lipgloss.Center, middlePart, bottomPart)
-		s += lipgloss.JoinVertical(lipgloss.Top, topPart, middlePart, bottomPart, quteInstractioons.Render("press esc to show result"))
-		// s += logo + "\n" + middlePart + "\n" + bottomPart
+		s = lipgloss.JoinVertical(lipgloss.Top, topPart, middlePart, bottomPart, quteInstractioons.Render("press esc to show result"))
 	} else {
 		timeTaken := t.EndTime.Sub(t.StartTime)
 		fullTextLen := len(t.FullText)

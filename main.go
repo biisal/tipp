@@ -18,7 +18,7 @@ func main() {
 	mode := flag.String("m", "eng", "Mode to use. Options are"+availableModes)
 	custom := flag.String("c", "", "Custom words file path")
 	flag.Parse()
-	if *words <= 0 || *words > 300 {
+	if *words <= 0 || *words > 3000 {
 		fmt.Println("Number of words must be between 1 and 300")
 		return
 	}
